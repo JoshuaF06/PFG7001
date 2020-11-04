@@ -261,6 +261,8 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
 
                 new setSocket().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, groupOwnerAddress.getHostAddress(), "8888");
                 new setSocket().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, groupOwnerAddress.getHostAddress(), "8889");
+                new setSocket().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, groupOwnerAddress.getHostAddress(), "8898");
+                new setSocket().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, groupOwnerAddress.getHostAddress(), "8899");
             } else {
                 Log.i("HOLA", "Error al configurar con cliente");
             }
