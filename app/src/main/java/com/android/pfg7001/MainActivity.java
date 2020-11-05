@@ -52,10 +52,10 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
     StreamFragment streamFragment;
     private AlertDialog mDialog;
     private boolean isActive = true;
-    private float gain1 = 100;
-    private float gain2 = 100;
-    private float gain3 = 100;
-    private float gain4 = 100;
+    private float gain1 = 1;
+    private float gain2 = 1;
+    private float gain3 = 1;
+    private float gain4 = 1;
     private String ownerAddress;
 
     private static final int PERMISSIONS_REQUEST_CODE_ACCESS_FINE_LOCATION = 1001;
@@ -197,24 +197,24 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
 
     @Override
     public void gain1(int gain) {
-        gain1 = (float) (gain / 100);
+        Log.i("HOLA", "gain1 " + gain);
+        gain1 = ((float) gain / 100);
+        Log.i("HOLA", "division " + gain1);
     }
 
     @Override
     public void gain2(int gain) {
-        gain2 = (float) (gain / 100);
-        ;
+        gain2 = ((float) gain / 100);
     }
 
     @Override
     public void gain3(int gain) {
-        gain3 = (float) (gain / 100);
-        ;
+        gain3 = ((float) gain / 100);
     }
 
     @Override
     public void gain4(int gain) {
-        gain4 = (float) (gain / 100);
+        gain4 = ((float) gain / 100);
     }
 
     WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
@@ -395,14 +395,14 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
                 Log.i("HOLA", "socket " + client);
                 InputStream inputStream = client.getInputStream();
 
-                int intBufferSize = AudioRecord.getMinBufferSize(8000,
+                int intBufferSize = AudioRecord.getMinBufferSize(4000,
                         AudioFormat.CHANNEL_IN_MONO,
                         AudioFormat.ENCODING_PCM_16BIT);
 
                 byte[] shortAudioData = new byte[intBufferSize];
 
                 audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC
-                        , 8000
+                        , 4000
                         , AudioFormat.CHANNEL_IN_STEREO
                         , AudioFormat.ENCODING_PCM_16BIT
                         , intBufferSize
@@ -414,9 +414,28 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
                 while (isActive) {
                     int bytes = inputStream.read(shortAudioData);
 
-//                    for (int i = 0; i < shortAudioData.length; i++) {
-//                        shortAudioData[i] = (byte) Math.min(shortAudioData[i] * gain1, Short.MAX_VALUE);
-//                    }
+                    switch (port) {
+                        case 1:
+                            for (int i = 0; i < shortAudioData.length; i++) {
+                                shortAudioData[i] = (byte) Math.min(shortAudioData[i] * gain1, Short.MAX_VALUE);
+                            }
+                            break;
+                        case 2:
+                            for (int i = 0; i < shortAudioData.length; i++) {
+                                shortAudioData[i] = (byte) Math.min(shortAudioData[i] * gain2, Short.MAX_VALUE);
+                            }
+                            break;
+                        case 3:
+                            for (int i = 0; i < shortAudioData.length; i++) {
+                                shortAudioData[i] = (byte) Math.min(shortAudioData[i] * gain3, Short.MAX_VALUE);
+                            }
+                            break;
+                        case 4:
+                            for (int i = 0; i < shortAudioData.length; i++) {
+                                shortAudioData[i] = (byte) Math.min(shortAudioData[i] * gain4, Short.MAX_VALUE);
+                            }
+                            break;
+                    }
 
                     audioTrack.write(shortAudioData, 0, bytes);
                 }

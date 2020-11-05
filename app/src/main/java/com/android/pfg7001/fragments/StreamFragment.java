@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.SeekBar;
 
 import androidx.annotation.NonNull;
@@ -67,10 +68,54 @@ public class StreamFragment extends Fragment {
 
         btnDesconectar.setOnClickListener(v -> myInterface.disconnect());
 
-        switchCompat1.setOnCheckedChangeListener((buttonView, isChecked) -> playSound1 = isChecked);
-        switchCompat2.setOnCheckedChangeListener((buttonView, isChecked) -> playSound2 = isChecked);
-        switchCompat3.setOnCheckedChangeListener((buttonView, isChecked) -> playSound3 = isChecked);
-        switchCompat4.setOnCheckedChangeListener((buttonView, isChecked) -> playSound4 = isChecked);
+        switchCompat1.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    seekBar1.setEnabled(true);
+                    myInterface.gain1(seekBar1.getProgress());
+                } else {
+                    seekBar1.setEnabled(false);
+                    myInterface.gain1(0);
+                }
+            }
+        });
+        switchCompat2.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    seekBar2.setEnabled(true);
+                    myInterface.gain2(seekBar2.getProgress());
+                } else {
+                    seekBar2.setEnabled(false);
+                    myInterface.gain2(0);
+                }
+            }
+        });
+        switchCompat3.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    seekBar3.setEnabled(true);
+                    myInterface.gain3(seekBar3.getProgress());
+                } else {
+                    seekBar3.setEnabled(false);
+                    myInterface.gain3(0);
+                }
+            }
+        });
+        switchCompat4.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    seekBar4.setEnabled(true);
+                    myInterface.gain4(seekBar4.getProgress());
+                } else {
+                    seekBar4.setEnabled(false);
+                    myInterface.gain4(0);
+                }
+            }
+        });
 
         seekBar1.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
