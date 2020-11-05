@@ -14,6 +14,7 @@ import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
+import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
@@ -56,7 +57,6 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
     private float gain2 = 1;
     private float gain3 = 1;
     private float gain4 = 1;
-    private String ownerAddress;
 
     private static final int PERMISSIONS_REQUEST_CODE_ACCESS_FINE_LOCATION = 1001;
     private static final int MY_PERMISSIONS_REQUEST_READ_CONTACTS = 1234;
@@ -84,6 +84,40 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
         }
     }
 
+    private boolean initP2p() {
+        // Device capability definition check
+        if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_WIFI_DIRECT)) {
+            Log.e("HOLA", "Wi-Fi Direct is not supported by this device.");
+            return false;
+        }
+
+        // Hardware capability check
+        WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        if (wifiManager == null) {
+            Log.e("HOLA", "Cannot get Wi-Fi system service.");
+            return false;
+        }
+
+        if (!wifiManager.isP2pSupported()) {
+            Log.e("HOLA", "Wi-Fi Direct is not supported by the hardware or Wi-Fi is off.");
+            //return false;
+        }
+
+        mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
+        if (mManager == null) {
+            Log.e("HOLA", "Cannot get Wi-Fi Direct system service.");
+            return false;
+        }
+
+        mChannel = mManager.initialize(this, getMainLooper(), null);
+        if (mChannel == null) {
+            Log.e("HOLA", "Cannot initialize Wi-Fi Direct.");
+            return false;
+        }
+
+        return true;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.i("HOLA", "onCreate");
@@ -95,14 +129,16 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
         SocketHandler.setSocket3(null);
         SocketHandler.setSocket4(null);
 
-        mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
-        mChannel = mManager.initialize(this, getMainLooper(), null);
 
         mIntentFilter = new IntentFilter();
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
         mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
+
+        if (!initP2p()) {
+            finish();
+        }
 
         findPeersFragment = new FindPeersFragment();
         getSupportFragmentManager().beginTransaction()
@@ -249,7 +285,6 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
         public void onConnectionInfoAvailable(WifiP2pInfo info) {
             Log.i("HOLA", "connectionInfoListener");
             final InetAddress groupOwnerAddress = info.groupOwnerAddress;
-            ownerAddress = groupOwnerAddress.getHostAddress();
 
             if (info.groupFormed && info.isGroupOwner) {
                 Log.i("HOLA", "Error al configurar con cliente");
@@ -268,21 +303,6 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
             }
         }
     };
-
-    @Override
-    protected void onResume() {
-        Log.i("HOLA", "onResume");
-        super.onResume();
-        mReceiver = new WiFiDirectBroadcastReceiver(mManager, mChannel, this);
-        registerReceiver(mReceiver, mIntentFilter);
-    }
-
-    @Override
-    protected void onPause() {
-        Log.i("HOLA", "onPause");
-        super.onPause();
-        //unregisterReceiver(mReceiver);
-    }
 
     @Override
     public void onChannelDisconnected() {
@@ -448,5 +468,20 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
                 }
             }
         }
+    }
+
+    @Override
+    protected void onResume() {
+        Log.i("HOLA", "onResume");
+        super.onResume();
+        mReceiver = new WiFiDirectBroadcastReceiver(mManager, mChannel, this);
+        registerReceiver(mReceiver, mIntentFilter);
+    }
+
+    @Override
+    protected void onPause() {
+        Log.i("HOLA", "onPause");
+        super.onPause();
+        unregisterReceiver(mReceiver);
     }
 }

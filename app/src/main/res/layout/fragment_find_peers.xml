@@ -39,7 +39,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:layout_marginEnd="3dp"
         android:text="Buscar" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
