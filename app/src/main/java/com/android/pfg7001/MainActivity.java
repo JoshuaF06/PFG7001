@@ -228,6 +228,15 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
                 Toast.makeText(MainActivity.this, "Desconexión exitosa", Toast.LENGTH_SHORT).show();
                 streamFragment = StreamFragment.getInstance(false);
                 isActive = false;
+                TabLayout.Tab tab = tabLayout.getTabAt(0);
+                if (tab != null) {
+                    tab.select();
+                    tab.setText(R.string.conection);
+                }
+
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.container, findPeersFragment)
+                        .commit();
             }
 
             @Override
