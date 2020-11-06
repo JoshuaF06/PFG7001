@@ -1,6 +1,8 @@
 package com.android.pfg7001;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
@@ -51,7 +53,6 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
     private BroadcastReceiver mReceiver;
     private IntentFilter mIntentFilter;
     private final List<WifiP2pDevice> peers = new ArrayList<>();
-    private String[] deviceNameArray;
     private WifiP2pDevice[] deviceArray;
     private boolean retryChannel = false;
     FindPeersFragment findPeersFragment;
@@ -81,6 +82,7 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
     }
 
     private boolean initP2p() {
+        Log.i("HOLA", "initP2p");
         // Device capability definition check
         if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_WIFI_DIRECT)) {
             Log.e("HOLA", "Wi-Fi Direct is not supported by this device.");
@@ -154,8 +156,6 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
                 .add(R.id.container, findPeersFragment)
                 .commit();
 
-        mDialog = new SpotsDialog.Builder().setContext(MainActivity.this).setMessage("Buscando").build();
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
                 && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -172,6 +172,7 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
     @Override
     public void btnDiscover() {
         Log.i("HOLA", "btnDiscover");
+        mDialog = new SpotsDialog.Builder().setContext(MainActivity.this).setMessage("Buscando").build();
         mDialog.show();
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -194,6 +195,9 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
 
     @Override
     public void onListClick(int position) {
+        Log.e("HOLA", "onListClick");
+        mDialog = new SpotsDialog.Builder().setContext(MainActivity.this).setMessage("Conectando").build();
+        mDialog.show();
         final WifiP2pDevice device = deviceArray[position];
         WifiP2pConfig config = new WifiP2pConfig();
         config.deviceAddress = device.deviceAddress;
@@ -204,12 +208,13 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
         mManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
-                Toast.makeText(MainActivity.this, "Connected to " + device.deviceName, Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "Conectado a " + device.deviceName, Toast.LENGTH_SHORT).show();
             }
 
             @Override
             public void onFailure(int reason) {
-                Toast.makeText(MainActivity.this, "Error connecting to" + device.deviceName, Toast.LENGTH_SHORT).show();
+                mDialog.dismiss();
+                Toast.makeText(MainActivity.this, "Error conectando a " + device.deviceName, Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -220,13 +225,14 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
         mManager.removeGroup(mChannel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
-                Toast.makeText(MainActivity.this, "Disconnect successful", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "Desconexión exitosa", Toast.LENGTH_SHORT).show();
                 streamFragment = StreamFragment.getInstance(false);
+                isActive = false;
             }
 
             @Override
             public void onFailure(int reason) {
-                Toast.makeText(MainActivity.this, "Failed to disconnect", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "Fallo al desconectar", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -262,7 +268,7 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
                 peers.clear();
                 peers.addAll(peersList.getDeviceList());
 
-                deviceNameArray = new String[peersList.getDeviceList().size()];
+                String[] deviceNameArray = new String[peersList.getDeviceList().size()];
                 deviceArray = new WifiP2pDevice[peersList.getDeviceList().size()];
 
                 int index = 0;
@@ -288,6 +294,7 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
 
             if (info.groupFormed && info.isGroupOwner) {
                 Log.i("HOLA", "Error al configurar con cliente");
+                disconnect();
             } else if (info.groupFormed) {
                 isActive = true;
                 streamFragment = StreamFragment.getInstance(true);
@@ -306,8 +313,11 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
                 new setSocket().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, groupOwnerAddress.getHostAddress(), "8889");
                 new setSocket().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, groupOwnerAddress.getHostAddress(), "8898");
                 new setSocket().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, groupOwnerAddress.getHostAddress(), "8899");
+                mDialog.dismiss();
             } else {
-                Log.i("HOLA", "Error al configurar con cliente");
+                mDialog.dismiss();
+                Toast.makeText(MainActivity.this, "Error al configurar con cliente", Toast.LENGTH_SHORT).show();
+                disconnect();
             }
         }
     };
@@ -328,6 +338,7 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
 
     @Override
     public void onTabSelected(TabLayout.Tab tab) {
+        Log.e("HOLA", "onTabSelected");
         String[] tabsText = getResources().getStringArray(R.array.tab_text);
         int position = tab.getPosition();
         tab.setText(tabsText[position]);
@@ -338,17 +349,12 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
                 fragment = findPeersFragment;
                 break;
             case 1:
-                if (!isActive){
+                if (!isActive) {
                     AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.TemaDialogoAlerta);
 
                     builder.setTitle("Alerta");
                     builder.setMessage("No hay ninguna conexión activa");
-                    builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.cancel();
-                        }
-                    });
+                    builder.setPositiveButton("OK", (dialog, which) -> dialog.cancel());
                     builder.create();
                     builder.show();
                 }
@@ -486,7 +492,6 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
                         , intBufferSize
                         , AudioTrack.MODE_STREAM);
 
-//                audioTrack.setPlaybackRate(intRecordSampleRate);
                 audioTrack.play();
 
                 while (isActive) {
@@ -517,6 +522,7 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
 
                     audioTrack.write(shortAudioData, 0, bytes);
                 }
+                inputStream.close();
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
@@ -534,6 +540,12 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
         super.onResume();
         mReceiver = new WiFiDirectBroadcastReceiver(mManager, mChannel, this);
         registerReceiver(mReceiver, mIntentFilter);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                Log.i("HOLA", "Fantan permisos");
+            }
+            mManager.requestDeviceInfo(mChannel, wifiP2pDevice -> findPeersFragment.updateThisDevice(wifiP2pDevice));
+        }
     }
 
     @Override

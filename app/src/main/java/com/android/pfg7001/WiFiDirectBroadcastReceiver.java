@@ -6,11 +6,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.NetworkInfo;
+import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.util.Log;
 import android.widget.Toast;
 
 import androidx.core.app.ActivityCompat;
+
+import com.android.pfg7001.fragments.FindPeersFragment;
 
 public class WiFiDirectBroadcastReceiver extends BroadcastReceiver {
 
@@ -31,6 +34,7 @@ public class WiFiDirectBroadcastReceiver extends BroadcastReceiver {
         String action = intent.getAction();
 
         if (WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION.equals(action)) {
+            Log.i("HOLA", "WIFI_P2P_STATE_CHANGED_ACTION");
             int state = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1);
 
             if (state == WifiP2pManager.WIFI_P2P_STATE_ENABLED) {
@@ -38,7 +42,7 @@ public class WiFiDirectBroadcastReceiver extends BroadcastReceiver {
             } else {
                 Toast.makeText(context, "Wifi is OFF", Toast.LENGTH_SHORT).show();
             }
-        } else if (WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION.equals(action)) {
+        } if (WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION.equals(action)) {
             Log.i("HOLA", "WIFI_P2P_PEERS_CHANGED_ACTION");
             if (ActivityCompat.checkSelfPermission(mActivity, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
@@ -61,6 +65,9 @@ public class WiFiDirectBroadcastReceiver extends BroadcastReceiver {
             }
         } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
             // Respond to this device's wifi state changing
+            Log.i("HOLA", "WIFI_P2P_THIS_DEVICE_CHANGED_ACTION");
+            mActivity.findPeersFragment.updateThisDevice(intent.getParcelableExtra(
+                    WifiP2pManager.EXTRA_WIFI_P2P_DEVICE));
         }
     }
 }
