@@ -3,11 +3,13 @@ package com.android.pfg7001;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.fragment.app.Fragment;
 
 import android.Manifest;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.media.AudioFormat;
@@ -27,7 +29,9 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.android.pfg7001.fragments.FindPeersFragment;
+import com.android.pfg7001.fragments.SettingsFragment;
 import com.android.pfg7001.fragments.StreamFragment;
+import com.google.android.material.tabs.TabLayout;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,7 +43,8 @@ import java.util.List;
 
 import dmax.dialog.SpotsDialog;
 
-public class MainActivity extends AppCompatActivity implements WifiP2pManager.ChannelListener, FindPeersFragment.IFindPeersFragment, StreamFragment.IStreamFragment {
+public class MainActivity extends AppCompatActivity implements WifiP2pManager.ChannelListener, FindPeersFragment.IFindPeersFragment,
+        StreamFragment.IStreamFragment, TabLayout.OnTabSelectedListener {
 
     private WifiP2pManager mManager;
     private WifiP2pManager.Channel mChannel;
@@ -51,15 +56,16 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
     private boolean retryChannel = false;
     FindPeersFragment findPeersFragment;
     StreamFragment streamFragment;
+    SettingsFragment settingsFragment;
     private AlertDialog mDialog;
-    private boolean isActive = true;
+    private boolean isActive = false;
     private float gain1 = 1;
     private float gain2 = 1;
     private float gain3 = 1;
     private float gain4 = 1;
+    private TabLayout tabLayout;
 
     private static final int PERMISSIONS_REQUEST_CODE_ACCESS_FINE_LOCATION = 1001;
-    private static final int MY_PERMISSIONS_REQUEST_READ_CONTACTS = 1234;
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
@@ -69,16 +75,6 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
                 if (grantResults[0] != PackageManager.PERMISSION_GRANTED) {
                     Log.e("TAG1", "Fine location permission is not granted!");
                     finish();
-                }
-                break;
-            case MY_PERMISSIONS_REQUEST_READ_CONTACTS:
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Log.d("HOLA", "permission granted");
-
-                } else {
-                    Log.d("HOLA", "permission denied by user");
                 }
                 break;
         }
@@ -140,7 +136,20 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
             finish();
         }
 
+        tabLayout = findViewById(R.id.tab_layout);
+        if (tabLayout != null) {
+            tabLayout.addOnTabSelectedListener(this);
+            TabLayout.Tab tab = tabLayout.getTabAt(0);
+            if (tab != null) {
+                tab.select();
+                tab.setText(R.string.conection);
+            }
+        }
+
         findPeersFragment = new FindPeersFragment();
+        streamFragment = StreamFragment.getInstance(false);
+        settingsFragment = new SettingsFragment();
+
         getSupportFragmentManager().beginTransaction()
                 .add(R.id.container, findPeersFragment)
                 .commit();
@@ -149,12 +158,6 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
                 && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED
-                && checkSelfPermission(Manifest.permission.CAMERA)
-                != PackageManager.PERMISSION_GRANTED
-                && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED
-                && checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                     MainActivity.PERMISSIONS_REQUEST_CODE_ACCESS_FINE_LOCATION);
@@ -172,7 +175,7 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
         mDialog.show();
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-
+            Log.i("HOLA", "Fantan permisos");
         }
         mManager.discoverPeers(mChannel, new WifiP2pManager.ActionListener() {
             @Override
@@ -196,7 +199,7 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
         config.deviceAddress = device.deviceAddress;
 
         if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-
+            Log.i("HOLA", "Fantan permisos");
         }
         mManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
             @Override
@@ -218,6 +221,7 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
             @Override
             public void onSuccess() {
                 Toast.makeText(MainActivity.this, "Disconnect successful", Toast.LENGTH_SHORT).show();
+                streamFragment = StreamFragment.getInstance(false);
             }
 
             @Override
@@ -225,17 +229,11 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
                 Toast.makeText(MainActivity.this, "Failed to disconnect", Toast.LENGTH_SHORT).show();
             }
         });
-        streamFragment = new StreamFragment();
-        getSupportFragmentManager().beginTransaction()
-                .replace(R.id.container, findPeersFragment)
-                .commit();
     }
 
     @Override
     public void gain1(int gain) {
-        Log.i("HOLA", "gain1 " + gain);
         gain1 = ((float) gain / 100);
-        Log.i("HOLA", "division " + gain1);
     }
 
     @Override
@@ -257,7 +255,9 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
         @Override
         public void onPeersAvailable(WifiP2pDeviceList peersList) {
             Log.i("HOLA", "peerListListener");
-            mDialog.dismiss();
+            if (mDialog.isShowing()) {
+                mDialog.dismiss();
+            }
             if (!peersList.getDeviceList().equals(peers)) {
                 peers.clear();
                 peers.addAll(peersList.getDeviceList());
@@ -289,7 +289,15 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
             if (info.groupFormed && info.isGroupOwner) {
                 Log.i("HOLA", "Error al configurar con cliente");
             } else if (info.groupFormed) {
-                streamFragment = new StreamFragment();
+                isActive = true;
+                streamFragment = StreamFragment.getInstance(true);
+
+                TabLayout.Tab tab = tabLayout.getTabAt(1);
+                if (tab != null) {
+                    tab.select();
+                    tab.setText(R.string.music);
+                }
+
                 getSupportFragmentManager().beginTransaction()
                         .replace(R.id.container, streamFragment)
                         .commit();
@@ -308,7 +316,7 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
     public void onChannelDisconnected() {
         Log.i("HOLA", "onChannelDisconnected");
         if (mManager != null && !retryChannel) {
-            Toast.makeText(this, "Channel lost. Trying again", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Conexion perdida, intentado conectar", Toast.LENGTH_LONG).show();
             retryChannel = true;
             mManager.initialize(this, getMainLooper(), this);
         } else {
@@ -316,6 +324,56 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
                     "Se perdio la conexion con el servidor. Intenta deshabilitar/Re-habilitar P2P.",
                     Toast.LENGTH_LONG).show();
         }
+    }
+
+    @Override
+    public void onTabSelected(TabLayout.Tab tab) {
+        String[] tabsText = getResources().getStringArray(R.array.tab_text);
+        int position = tab.getPosition();
+        tab.setText(tabsText[position]);
+
+        Fragment fragment;
+        switch (position) {
+            case 0:
+                fragment = findPeersFragment;
+                break;
+            case 1:
+                if (!isActive){
+                    AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.TemaDialogoAlerta);
+
+                    builder.setTitle("Alerta");
+                    builder.setMessage("No hay ninguna conexión activa");
+                    builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.cancel();
+                        }
+                    });
+                    builder.create();
+                    builder.show();
+                }
+                fragment = streamFragment;
+                break;
+            case 2:
+                fragment = settingsFragment;
+                break;
+            default:
+                fragment = null;
+        }
+
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.container, fragment)
+                .commit();
+    }
+
+    @Override
+    public void onTabUnselected(TabLayout.Tab tab) {
+        tab.setText("");
+    }
+
+    @Override
+    public void onTabReselected(TabLayout.Tab tab) {
+
     }
 
     public class setSocket extends AsyncTask<String, Void, String> {

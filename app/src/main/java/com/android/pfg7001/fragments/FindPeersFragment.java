@@ -17,7 +17,6 @@ import com.android.pfg7001.R;
 
 public class FindPeersFragment extends Fragment {
 
-    private Button btnDiscover;
     private ListView listView;
     private IFindPeersFragment myInterface;
     String[] deviceNameArray;
@@ -26,6 +25,8 @@ public class FindPeersFragment extends Fragment {
         void btnDiscover();
 
         void onListClick(int position);
+
+        void disconnect();
     }
 
     @Override
@@ -47,10 +48,12 @@ public class FindPeersFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        btnDiscover = view.findViewById(R.id.discover);
+        Button btnDiscover = view.findViewById(R.id.discover);
+        Button btnDesconectar = view.findViewById(R.id.btnDesconectar);
         listView = view.findViewById(R.id.peerListView);
 
         btnDiscover.setOnClickListener(v -> myInterface.btnDiscover());
+        btnDesconectar.setOnClickListener(v -> myInterface.disconnect());
 
         listView.setOnItemClickListener((parent, view1, position, id) -> myInterface.onListClick(position));
     }

@@ -5,8 +5,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.CompoundButton;
 import android.widget.SeekBar;
 
 import androidx.annotation.NonNull;
@@ -20,14 +18,14 @@ import com.android.pfg7001.R;
 public class StreamFragment extends Fragment {
 
     private IStreamFragment myInterface;
-    private boolean playSound1 = true;
-    private boolean playSound2 = true;
-    private boolean playSound3 = true;
-    private boolean playSound4 = true;
+    private boolean playSound1;
+    private boolean playSound2;
+    private boolean playSound3;
+    private boolean playSound4;
+    private static final String KEY_VIEW = "setView";
+    private boolean setView;
 
     public interface IStreamFragment {
-        void disconnect();
-
         void gain1(int gain);
 
         void gain2(int gain);
@@ -46,6 +44,25 @@ public class StreamFragment extends Fragment {
         }
     }
 
+    public static StreamFragment getInstance(boolean setView){
+        StreamFragment fragment = new StreamFragment();
+
+        Bundle argumentos = new Bundle();
+        argumentos.putBoolean(KEY_VIEW, setView);
+
+        fragment.setArguments(argumentos);
+        return fragment;
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        Bundle argumentos = getArguments();
+        if (argumentos != null)
+            this.setView = argumentos.getBoolean(KEY_VIEW);
+    }
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -56,7 +73,10 @@ public class StreamFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        Button btnDesconectar = view.findViewById(R.id.btnDesconectar);
+        playSound1 = true;
+        playSound2 = true;
+        playSound3 = true;
+        playSound4 = true;
         SwitchCompat switchCompat1 = view.findViewById(R.id.switchAudio1);
         SwitchCompat switchCompat2 = view.findViewById(R.id.switchAudio2);
         SwitchCompat switchCompat3 = view.findViewById(R.id.switchAudio3);
@@ -65,55 +85,45 @@ public class StreamFragment extends Fragment {
         AppCompatSeekBar seekBar2 = view.findViewById(R.id.seekBar2);
         AppCompatSeekBar seekBar3 = view.findViewById(R.id.seekBar3);
         AppCompatSeekBar seekBar4 = view.findViewById(R.id.seekBar4);
+        View viewIsStreaming = view.findViewById(R.id.viewIsStreaming);
+        if (setView){
+            viewIsStreaming.setVisibility(View.GONE);
+        }
 
-        btnDesconectar.setOnClickListener(v -> myInterface.disconnect());
-
-        switchCompat1.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    seekBar1.setEnabled(true);
-                    myInterface.gain1(seekBar1.getProgress());
-                } else {
-                    seekBar1.setEnabled(false);
-                    myInterface.gain1(0);
-                }
+        switchCompat1.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                seekBar1.setEnabled(true);
+                myInterface.gain1(seekBar1.getProgress());
+            } else {
+                seekBar1.setEnabled(false);
+                myInterface.gain1(0);
             }
         });
-        switchCompat2.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    seekBar2.setEnabled(true);
-                    myInterface.gain2(seekBar2.getProgress());
-                } else {
-                    seekBar2.setEnabled(false);
-                    myInterface.gain2(0);
-                }
+        switchCompat2.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                seekBar2.setEnabled(true);
+                myInterface.gain2(seekBar2.getProgress());
+            } else {
+                seekBar2.setEnabled(false);
+                myInterface.gain2(0);
             }
         });
-        switchCompat3.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    seekBar3.setEnabled(true);
-                    myInterface.gain3(seekBar3.getProgress());
-                } else {
-                    seekBar3.setEnabled(false);
-                    myInterface.gain3(0);
-                }
+        switchCompat3.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                seekBar3.setEnabled(true);
+                myInterface.gain3(seekBar3.getProgress());
+            } else {
+                seekBar3.setEnabled(false);
+                myInterface.gain3(0);
             }
         });
-        switchCompat4.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    seekBar4.setEnabled(true);
-                    myInterface.gain4(seekBar4.getProgress());
-                } else {
-                    seekBar4.setEnabled(false);
-                    myInterface.gain4(0);
-                }
+        switchCompat4.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                seekBar4.setEnabled(true);
+                myInterface.gain4(seekBar4.getProgress());
+            } else {
+                seekBar4.setEnabled(false);
+                myInterface.gain4(0);
             }
         });
 

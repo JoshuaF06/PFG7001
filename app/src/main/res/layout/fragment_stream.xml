@@ -3,14 +3,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/black"
-    android:fitsSystemWindows="true"
-    android:padding="16dp">
+    android:background="#131313">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:padding="16dp">
 
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
@@ -23,21 +22,21 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="@color/gray_blue"
+                android:background="@color/bluePrimary"
                 android:orientation="vertical">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:padding="16dp"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    android:padding="16dp">
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
                         android:layout_weight="1"
-                        android:text="Pista 1"
                         android:gravity="center_vertical"
+                        android:text="Pista 1"
                         android:textColor="@color/white"
                         android:textSize="24sp" />
 
@@ -45,16 +44,16 @@
                         android:id="@+id/switchAudio1"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:checked="true"/>
+                        android:checked="true" />
 
                 </LinearLayout>
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
                     android:text="Volumen"
-                    android:textColor="@color/white"
-                    android:layout_marginStart="16dp" />
+                    android:textColor="@color/white" />
 
                 <androidx.appcompat.widget.AppCompatSeekBar
                     android:id="@+id/seekBar1"
@@ -77,21 +76,21 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="@color/gray_blue"
+                android:background="@color/bluePrimary"
                 android:orientation="vertical">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:padding="16dp"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    android:padding="16dp">
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
                         android:layout_weight="1"
-                        android:text="Pista 2"
                         android:gravity="center_vertical"
+                        android:text="Pista 2"
                         android:textColor="@color/white"
                         android:textSize="24sp" />
 
@@ -99,16 +98,16 @@
                         android:id="@+id/switchAudio2"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:checked="true"/>
+                        android:checked="true" />
 
                 </LinearLayout>
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
                     android:text="Volumen"
-                    android:textColor="@color/white"
-                    android:layout_marginStart="16dp" />
+                    android:textColor="@color/white" />
 
                 <androidx.appcompat.widget.AppCompatSeekBar
                     android:id="@+id/seekBar2"
@@ -132,21 +131,21 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="@color/gray_blue"
+                android:background="@color/bluePrimary"
                 android:orientation="vertical">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:padding="16dp"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    android:padding="16dp">
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
                         android:layout_weight="1"
-                        android:text="Pista 3"
                         android:gravity="center_vertical"
+                        android:text="Pista 3"
                         android:textColor="@color/white"
                         android:textSize="24sp" />
 
@@ -154,16 +153,16 @@
                         android:id="@+id/switchAudio3"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:checked="true"/>
+                        android:checked="true" />
 
                 </LinearLayout>
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
                     android:text="Volumen"
-                    android:textColor="@color/white"
-                    android:layout_marginStart="16dp" />
+                    android:textColor="@color/white" />
 
                 <androidx.appcompat.widget.AppCompatSeekBar
                     android:id="@+id/seekBar3"
@@ -187,21 +186,21 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="@color/gray_blue"
+                android:background="@color/bluePrimary"
                 android:orientation="vertical">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:padding="16dp"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    android:padding="16dp">
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
                         android:layout_weight="1"
-                        android:text="Pista 4"
                         android:gravity="center_vertical"
+                        android:text="Pista 4"
                         android:textColor="@color/white"
                         android:textSize="24sp" />
 
@@ -216,9 +215,9 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
                     android:text="Volumen"
-                    android:textColor="@color/white"
-                    android:layout_marginStart="16dp" />
+                    android:textColor="@color/white" />
 
                 <androidx.appcompat.widget.AppCompatSeekBar
                     android:id="@+id/seekBar4"
@@ -230,13 +229,13 @@
 
         </androidx.cardview.widget.CardView>
 
-        <Button
-            android:id="@+id/btnDesconectar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:text="Desconectar" />
-
     </LinearLayout>
+
+    <View
+        android:id="@+id/viewIsStreaming"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="visible"
+        android:background="@color/colorWhiteSemitransparent" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

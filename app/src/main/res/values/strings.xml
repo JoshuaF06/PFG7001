@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">PFG7001</string>
+
+    <string name="conection">Conexión</string>
+    <string name="music">Pistas</string>
+    <string name="settings">Configuración</string>
+
+    <string-array name="tab_text">
+        <item>@string/conection</item>
+        <item>@string/music</item>
+        <item>@string/settings</item>
+    </string-array>
 </resources>
