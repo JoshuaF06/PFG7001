@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/itemConnect"
+        android:icon="@drawable/access_point_network"
+        android:title="Conexión" />
+    <item
+        android:id="@+id/itemStream"
+        android:icon="@drawable/play_pause"
+        android:title="Pistas" />
+
+</menu>

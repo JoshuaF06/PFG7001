@@ -1,70 +1,62 @@
 package com.android.pfg7001;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.fragment.app.Fragment;
-
 import android.Manifest;
 import android.app.AlertDialog;
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.content.IntentFilter;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
-import android.net.wifi.p2p.WifiP2pConfig;
-import android.net.wifi.p2p.WifiP2pDevice;
-import android.net.wifi.p2p.WifiP2pDeviceList;
-import android.net.wifi.p2p.WifiP2pInfo;
-import android.net.wifi.p2p.WifiP2pManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.android.pfg7001.fragments.FindPeersFragment;
-import com.android.pfg7001.fragments.SettingsFragment;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
+
+import com.android.pfg7001.dialogs.ConnectionDialog;
+import com.android.pfg7001.fragments.ConnectFragment;
 import com.android.pfg7001.fragments.StreamFragment;
-import com.google.android.material.tabs.TabLayout;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 
-import dmax.dialog.SpotsDialog;
+public class MainActivity extends AppCompatActivity implements ConnectFragment.IFindPeersFragment, ConnectionDialog.IConnectionDialog,
+        StreamFragment.IStreamFragment {
 
-public class MainActivity extends AppCompatActivity implements WifiP2pManager.ChannelListener, FindPeersFragment.IFindPeersFragment,
-        StreamFragment.IStreamFragment, TabLayout.OnTabSelectedListener {
-
-    private WifiP2pManager mManager;
-    private WifiP2pManager.Channel mChannel;
-    private BroadcastReceiver mReceiver;
-    private IntentFilter mIntentFilter;
-    private final List<WifiP2pDevice> peers = new ArrayList<>();
-    private WifiP2pDevice[] deviceArray;
-    private boolean retryChannel = false;
-    FindPeersFragment findPeersFragment;
+    ConnectFragment connectFragment;
     StreamFragment streamFragment;
-    SettingsFragment settingsFragment;
-    private AlertDialog mDialog;
     private boolean isActive = false;
     private float gain1 = 1;
     private float gain2 = 1;
     private float gain3 = 1;
     private float gain4 = 1;
-    private TabLayout tabLayout;
+    private BottomNavigationView bottomNavigation;
+    private static final String SERVER_IP = "192.168.4.1"; //server IP address
+    private PrintWriter mBufferOut;
+    private AudioTrack audioTrack1;
+    private AudioTrack audioTrack2;
+    private AudioTrack audioTrack3;
+    private AudioTrack audioTrack4;
+    private WifiManager wifimgr;
+    private String deviceName = android.os.Build.MODEL;
+    private String wifiName;
 
     private static final int PERMISSIONS_REQUEST_CODE_ACCESS_FINE_LOCATION = 1001;
 
@@ -81,39 +73,14 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
         }
     }
 
-    private boolean initP2p() {
-        Log.i("HOLA", "initP2p");
-        // Device capability definition check
-        if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_WIFI_DIRECT)) {
-            Log.e("HOLA", "Wi-Fi Direct is not supported by this device.");
-            return false;
-        }
+    @Override
+    protected void onResume() {
+        super.onResume();
 
-        // Hardware capability check
-        WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-        if (wifiManager == null) {
-            Log.e("HOLA", "Cannot get Wi-Fi system service.");
-            return false;
-        }
+        wifiName = getRed();
+        connectFragment = ConnectFragment.getInstance(deviceName, wifiName);
 
-        if (!wifiManager.isP2pSupported()) {
-            Log.e("HOLA", "Wi-Fi Direct is not supported by the hardware or Wi-Fi is off.");
-            //return false;
-        }
-
-        mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
-        if (mManager == null) {
-            Log.e("HOLA", "Cannot get Wi-Fi Direct system service.");
-            return false;
-        }
-
-        mChannel = mManager.initialize(this, getMainLooper(), null);
-        if (mChannel == null) {
-            Log.e("HOLA", "Cannot initialize Wi-Fi Direct.");
-            return false;
-        }
-
-        return true;
+        openFragment(connectFragment);
     }
 
     @Override
@@ -121,40 +88,22 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
         Log.i("HOLA", "onCreate");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        wifimgr = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
 
         SocketHandler.setSocket1(null);
         SocketHandler.setSocket2(null);
         SocketHandler.setSocket3(null);
         SocketHandler.setSocket4(null);
 
+        bottomNavigation = findViewById(R.id.bottom_navigation);
+        bottomNavigation.setOnNavigationItemSelectedListener(navigationItemSelectedListener);
 
-        mIntentFilter = new IntentFilter();
-        mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
-        mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
-        mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
-        mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
+        wifiName = getRed();
 
-        if (!initP2p()) {
-            finish();
-        }
-
-        tabLayout = findViewById(R.id.tab_layout);
-        if (tabLayout != null) {
-            tabLayout.addOnTabSelectedListener(this);
-            TabLayout.Tab tab = tabLayout.getTabAt(0);
-            if (tab != null) {
-                tab.select();
-                tab.setText(R.string.conection);
-            }
-        }
-
-        findPeersFragment = new FindPeersFragment();
+        connectFragment = ConnectFragment.getInstance(deviceName, wifiName);
         streamFragment = StreamFragment.getInstance(false);
-        settingsFragment = new SettingsFragment();
 
-        getSupportFragmentManager().beginTransaction()
-                .add(R.id.container, findPeersFragment)
-                .commit();
+       openFragment(connectFragment);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
                 && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -165,244 +114,147 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
             // After this point you wait for callback in
             // onRequestPermissionsResult(int, String[], int[]) overridden method
         }
+    }
 
+    public void openFragment(Fragment fragment) {
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.container, fragment);
+        transaction.addToBackStack(null);
+        transaction.commit();
+    }
+
+    BottomNavigationView.OnNavigationItemSelectedListener navigationItemSelectedListener =
+            item -> {
+                switch (item.getItemId()) {
+                    case R.id.itemConnect:
+                        openFragment(connectFragment);
+                        return true;
+                    case R.id.itemStream:
+                        openFragment(streamFragment);
+                        if (!isActive) {
+                            AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.TemaDialogoAlerta);
+
+                            builder.setTitle("Alerta");
+                            builder.setMessage("No hay ninguna conexión activa");
+                            builder.setPositiveButton("OK", (dialog, which) -> dialog.cancel());
+                            builder.create();
+                            builder.show();
+                        }
+                        return true;
+                }
+                return false;
+            };
+
+    public boolean conexion() {
+        ConnectivityManager cm = (ConnectivityManager) this.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = cm.getActiveNetworkInfo();
+
+        if (networkInfo != null && networkInfo.isConnectedOrConnecting()) {
+            return true;
+        }
+        return false;
 
     }
 
-    @Override
-    public void btnDiscover() {
-        Log.i("HOLA", "btnDiscover");
-        mDialog = new SpotsDialog.Builder().setContext(MainActivity.this).setMessage("Buscando").build();
-        mDialog.show();
+    private String getRed() {
+        WifiInfo info = wifimgr.getConnectionInfo();
+        return info.getSSID();
+    }
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            Log.i("HOLA", "Fantan permisos");
+    private void comprobarRed() {
+        ConnectionDialog dialog = new ConnectionDialog();
+        if (conexion()) {
+            WifiInfo info = wifimgr.getConnectionInfo();
+
+            try {
+                if (info.getSSID().equals("\"PFG7001\"")) {
+                    isActive = true;
+                    streamFragment = StreamFragment.getInstance(true);
+
+                    bottomNavigation.setSelectedItemId(R.id.itemStream);
+
+                    new setSocket().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "8888");
+                    new setSocket().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "8889");
+                    new setSocket().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "8898");
+                    new setSocket().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "8899");
+
+                } else {
+                    dialog.show(getSupportFragmentManager(), "confirmación");
+                }
+
+            } catch (Exception e) {
+                Toast.makeText(MainActivity.this, "Error al leer la informacion", Toast.LENGTH_SHORT).show();
+
+            }
+        } else {
+            dialog.show(getSupportFragmentManager(), "confirmación");
         }
-        mManager.discoverPeers(mChannel, new WifiP2pManager.ActionListener() {
-            @Override
-            public void onSuccess() {
-                Log.i("HOLA", "onSuccess");
-            }
-
-            @Override
-            public void onFailure(int reason) {
-                Log.i("HOLA", "onFailure");
-                mDialog.dismiss();
-                Toast.makeText(MainActivity.this, "Error al buscar", Toast.LENGTH_SHORT).show();
-            }
-        });
     }
 
     @Override
-    public void onListClick(int position) {
-        Log.e("HOLA", "onListClick");
-        mDialog = new SpotsDialog.Builder().setContext(MainActivity.this).setMessage("Conectando").build();
-        mDialog.show();
-        final WifiP2pDevice device = deviceArray[position];
-        WifiP2pConfig config = new WifiP2pConfig();
-        config.deviceAddress = device.deviceAddress;
-
-        if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            Log.i("HOLA", "Fantan permisos");
-        }
-        mManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
-            @Override
-            public void onSuccess() {
-                Toast.makeText(MainActivity.this, "Conectado a " + device.deviceName, Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onFailure(int reason) {
-                mDialog.dismiss();
-                Toast.makeText(MainActivity.this, "Error conectando a " + device.deviceName, Toast.LENGTH_SHORT).show();
-            }
-        });
+    public void connect() {
+        comprobarRed();
     }
 
     @Override
     public void disconnect() {
         Log.i("HOLA", "disconnect");
-        mManager.removeGroup(mChannel, new WifiP2pManager.ActionListener() {
-            @Override
-            public void onSuccess() {
-                Toast.makeText(MainActivity.this, "Desconexión exitosa", Toast.LENGTH_SHORT).show();
-                streamFragment = StreamFragment.getInstance(false);
-                isActive = false;
-                TabLayout.Tab tab = tabLayout.getTabAt(0);
-                if (tab != null) {
-                    tab.select();
-                    tab.setText(R.string.conection);
-                }
+        Toast.makeText(MainActivity.this, "Desconexión exitosa", Toast.LENGTH_SHORT).show();
+        streamFragment = StreamFragment.getInstance(false);
+        isActive = false;
 
-                getSupportFragmentManager().beginTransaction()
-                        .replace(R.id.container, findPeersFragment)
-                        .commit();
-            }
+        bottomNavigation.setSelectedItemId(R.id.itemConnect);
 
-            @Override
-            public void onFailure(int reason) {
-                Toast.makeText(MainActivity.this, "Fallo al desconectar", Toast.LENGTH_SHORT).show();
-            }
-        });
+        gain1 = 1;
+        gain2 = 1;
+        gain3 = 1;
+        gain4 = 1;
     }
 
     @Override
     public void gain1(int gain) {
         gain1 = ((float) gain / 100);
+        if (audioTrack1 != null)
+            audioTrack1.setVolume(gain1);
     }
 
     @Override
     public void gain2(int gain) {
         gain2 = ((float) gain / 100);
+        if (audioTrack2 != null)
+            audioTrack2.setVolume(gain2);
     }
 
     @Override
     public void gain3(int gain) {
         gain3 = ((float) gain / 100);
+        if (audioTrack3 != null)
+            audioTrack3.setVolume(gain3);
     }
 
     @Override
     public void gain4(int gain) {
         gain4 = ((float) gain / 100);
-    }
-
-    WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
-        @Override
-        public void onPeersAvailable(WifiP2pDeviceList peersList) {
-            Log.i("HOLA", "peerListListener");
-            if (mDialog.isShowing()) {
-                mDialog.dismiss();
-            }
-            if (!peersList.getDeviceList().equals(peers)) {
-                peers.clear();
-                peers.addAll(peersList.getDeviceList());
-
-                String[] deviceNameArray = new String[peersList.getDeviceList().size()];
-                deviceArray = new WifiP2pDevice[peersList.getDeviceList().size()];
-
-                int index = 0;
-                for (WifiP2pDevice device : peersList.getDeviceList()) {
-                    deviceNameArray[index] = device.deviceName;
-                    deviceArray[index] = device;
-                    index++;
-                }
-                findPeersFragment.updateList(deviceNameArray);
-            }
-
-            if (peers.size() == 0) {
-                Toast.makeText(MainActivity.this, "No devices found", Toast.LENGTH_SHORT).show();
-            }
-        }
-    };
-
-    WifiP2pManager.ConnectionInfoListener connectionInfoListener = new WifiP2pManager.ConnectionInfoListener() {
-        @Override
-        public void onConnectionInfoAvailable(WifiP2pInfo info) {
-            Log.i("HOLA", "connectionInfoListener");
-            final InetAddress groupOwnerAddress = info.groupOwnerAddress;
-
-            if (info.groupFormed && info.isGroupOwner) {
-                Log.i("HOLA", "Error al configurar con cliente");
-                disconnect();
-            } else if (info.groupFormed) {
-                isActive = true;
-                streamFragment = StreamFragment.getInstance(true);
-
-                TabLayout.Tab tab = tabLayout.getTabAt(1);
-                if (tab != null) {
-                    tab.select();
-                    tab.setText(R.string.music);
-                }
-
-                getSupportFragmentManager().beginTransaction()
-                        .replace(R.id.container, streamFragment)
-                        .commit();
-
-                new setSocket().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, groupOwnerAddress.getHostAddress(), "8888");
-                new setSocket().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, groupOwnerAddress.getHostAddress(), "8889");
-                new setSocket().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, groupOwnerAddress.getHostAddress(), "8898");
-                new setSocket().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, groupOwnerAddress.getHostAddress(), "8899");
-                mDialog.dismiss();
-            } else {
-                mDialog.dismiss();
-                Toast.makeText(MainActivity.this, "Error al configurar con cliente", Toast.LENGTH_SHORT).show();
-                disconnect();
-            }
-        }
-    };
-
-    @Override
-    public void onChannelDisconnected() {
-        Log.i("HOLA", "onChannelDisconnected");
-        if (mManager != null && !retryChannel) {
-            Toast.makeText(this, "Conexion perdida, intentado conectar", Toast.LENGTH_LONG).show();
-            retryChannel = true;
-            mManager.initialize(this, getMainLooper(), this);
-        } else {
-            Toast.makeText(this,
-                    "Se perdio la conexion con el servidor. Intenta deshabilitar/Re-habilitar P2P.",
-                    Toast.LENGTH_LONG).show();
-        }
+        if (audioTrack4 != null)
+            audioTrack4.setVolume(gain4);
     }
 
     @Override
-    public void onTabSelected(TabLayout.Tab tab) {
-        Log.e("HOLA", "onTabSelected");
-        String[] tabsText = getResources().getStringArray(R.array.tab_text);
-        int position = tab.getPosition();
-        tab.setText(tabsText[position]);
-
-        Fragment fragment;
-        switch (position) {
-            case 0:
-                fragment = findPeersFragment;
-                break;
-            case 1:
-                if (!isActive) {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.TemaDialogoAlerta);
-
-                    builder.setTitle("Alerta");
-                    builder.setMessage("No hay ninguna conexión activa");
-                    builder.setPositiveButton("OK", (dialog, which) -> dialog.cancel());
-                    builder.create();
-                    builder.show();
-                }
-                fragment = streamFragment;
-                break;
-            case 2:
-                fragment = settingsFragment;
-                break;
-            default:
-                fragment = null;
-        }
-
-        getSupportFragmentManager().beginTransaction()
-                .replace(R.id.container, fragment)
-                .commit();
-    }
-
-    @Override
-    public void onTabUnselected(TabLayout.Tab tab) {
-        tab.setText("");
-    }
-
-    @Override
-    public void onTabReselected(TabLayout.Tab tab) {
-
+    public void openSettings() {
+        startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
     }
 
     public class setSocket extends AsyncTask<String, Void, String> {
-        String hostAdd;
         String port;
 
         @Override
         protected String doInBackground(String... strings) {
-            hostAdd = strings[0];
-            port = strings[1];
-            Log.i("HOLA", "" + hostAdd + " " + port);
+            port = strings[0];
             try {
-                Socket client = new Socket();
-                client.connect(new InetSocketAddress(hostAdd, Integer.parseInt(port)), 5000);
+                String messageStr = "feed";
+                InetAddress serverAddr = InetAddress.getByName(SERVER_IP);
+                Socket client = new Socket(serverAddr, Integer.parseInt(port));
+                client.setTcpNoDelay(true);
                 Log.i("HOLA", "socket " + client);
                 switch (port) {
                     case "8888":
@@ -430,6 +282,7 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
         protected void onPostExecute(String s) {
             super.onPostExecute(s);
             int selectPort;
+            Log.i("HOLA", "onPostExecute " + s);
 
             switch (s) {
                 case "8888":
@@ -456,7 +309,6 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
     }
 
     public class ReceiveAudio extends Thread {
-        private AudioTrack audioTrack;
         private final int port;
 
         public ReceiveAudio(int port) {
@@ -466,101 +318,101 @@ public class MainActivity extends AppCompatActivity implements WifiP2pManager.Ch
         @Override
         public void run() {
             try {
-                Log.i("HOLA", "ReceiveAudio run");
-                Log.i("HOLA", "port " + port);
                 Socket client;
-                switch (port) {
-                    case 1:
-                        client = SocketHandler.getSocket1();
-                        break;
-                    case 2:
-                        client = SocketHandler.getSocket2();
-                        break;
-                    case 3:
-                        client = SocketHandler.getSocket3();
-                        break;
-                    case 4:
-                        client = SocketHandler.getSocket4();
-                        break;
-                    default:
-                        client = null;
-                }
-                Log.i("HOLA", "socket " + client);
-                InputStream inputStream = client.getInputStream();
-
-                int intBufferSize = AudioRecord.getMinBufferSize(4000,
-                        AudioFormat.CHANNEL_IN_MONO,
+                int intBufferSize = AudioRecord.getMinBufferSize(16000,
+                        AudioFormat.CHANNEL_IN_STEREO,
                         AudioFormat.ENCODING_PCM_16BIT);
 
                 byte[] shortAudioData = new byte[intBufferSize];
 
-                audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC
-                        , 4000
-                        , AudioFormat.CHANNEL_IN_STEREO
-                        , AudioFormat.ENCODING_PCM_16BIT
-                        , intBufferSize
-                        , AudioTrack.MODE_STREAM);
+                switch (port) {
+                    case 1:
+                        client = SocketHandler.getSocket1();
+                        audioTrack1 = new AudioTrack(AudioManager.STREAM_MUSIC
+                                , 16000
+                                , AudioFormat.CHANNEL_IN_STEREO
+                                , AudioFormat.ENCODING_PCM_16BIT
+                                , intBufferSize
+                                , AudioTrack.MODE_STREAM);
 
-                audioTrack.play();
+                        audioTrack1.play();
+                        break;
+                    case 2:
+                        client = SocketHandler.getSocket2();
+                        audioTrack2 = new AudioTrack(AudioManager.STREAM_MUSIC
+                                , 16000
+                                , AudioFormat.CHANNEL_IN_STEREO
+                                , AudioFormat.ENCODING_PCM_16BIT
+                                , intBufferSize
+                                , AudioTrack.MODE_STREAM);
+
+                        audioTrack2.play();
+                        break;
+                    case 3:
+                        client = SocketHandler.getSocket3();
+                        audioTrack3 = new AudioTrack(AudioManager.STREAM_MUSIC
+                                , 16000
+                                , AudioFormat.CHANNEL_IN_STEREO
+                                , AudioFormat.ENCODING_PCM_16BIT
+                                , intBufferSize
+                                , AudioTrack.MODE_STREAM);
+
+                        audioTrack3.play();
+                        break;
+                    case 4:
+                        client = SocketHandler.getSocket4();
+                        audioTrack4 = new AudioTrack(AudioManager.STREAM_MUSIC
+                                , 16000
+                                , AudioFormat.CHANNEL_IN_STEREO
+                                , AudioFormat.ENCODING_PCM_16BIT
+                                , intBufferSize
+                                , AudioTrack.MODE_STREAM);
+
+                        audioTrack4.play();
+                        break;
+                    default:
+                        client = null;
+                }
+
+                InputStream inputStream = client.getInputStream();
 
                 while (isActive) {
                     int bytes = inputStream.read(shortAudioData);
 
                     switch (port) {
                         case 1:
-                            for (int i = 0; i < shortAudioData.length; i++) {
-                                shortAudioData[i] = (byte) Math.min(shortAudioData[i] * gain1, Short.MAX_VALUE);
-                            }
+                            audioTrack1.write(shortAudioData, 0, bytes);
+                            Log.i("Tiempo", "" + Arrays.toString(shortAudioData));
                             break;
                         case 2:
-                            for (int i = 0; i < shortAudioData.length; i++) {
-                                shortAudioData[i] = (byte) Math.min(shortAudioData[i] * gain2, Short.MAX_VALUE);
-                            }
+                            audioTrack2.write(shortAudioData, 0, bytes);
                             break;
                         case 3:
-                            for (int i = 0; i < shortAudioData.length; i++) {
-                                shortAudioData[i] = (byte) Math.min(shortAudioData[i] * gain3, Short.MAX_VALUE);
-                            }
+                            audioTrack3.write(shortAudioData, 0, bytes);
                             break;
                         case 4:
-                            for (int i = 0; i < shortAudioData.length; i++) {
-                                shortAudioData[i] = (byte) Math.min(shortAudioData[i] * gain4, Short.MAX_VALUE);
-                            }
+                            audioTrack4.write(shortAudioData, 0, bytes);
                             break;
                     }
-
-                    audioTrack.write(shortAudioData, 0, bytes);
                 }
                 inputStream.close();
+                client.close();
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
-                if (audioTrack != null) {
-                    audioTrack.stop();
-                    audioTrack.release();
+                if (audioTrack1 != null) {
+                    audioTrack1.release();
+                }
+                if (audioTrack2 != null) {
+                    audioTrack2.release();
+                }
+                if (audioTrack3 != null) {
+                    audioTrack3.release();
+                }
+                if (audioTrack4 != null) {
+                    audioTrack4.release();
                 }
             }
         }
-    }
-
-    @Override
-    protected void onResume() {
-        Log.i("HOLA", "onResume");
-        super.onResume();
-        mReceiver = new WiFiDirectBroadcastReceiver(mManager, mChannel, this);
-        registerReceiver(mReceiver, mIntentFilter);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                Log.i("HOLA", "Fantan permisos");
-            }
-            mManager.requestDeviceInfo(mChannel, wifiP2pDevice -> findPeersFragment.updateThisDevice(wifiP2pDevice));
-        }
-    }
-
-    @Override
-    protected void onPause() {
-        Log.i("HOLA", "onPause");
-        super.onPause();
-        unregisterReceiver(mReceiver);
     }
 }

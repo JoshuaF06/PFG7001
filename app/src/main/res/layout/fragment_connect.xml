@@ -13,16 +13,6 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="15dp"
-            android:text="Busca para conectarte"
-            android:textAlignment="center"
-            android:textColor="@android:color/holo_blue_dark"
-            android:textSize="18sp"
-            android:textStyle="italic" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:text="Tus datos"
             android:textColor="@color/white" />
@@ -83,19 +73,6 @@
             android:background="@android:color/holo_blue_light"
             android:gravity="center_vertical" />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="25dp"
-            android:text="Dispositivos disponible"
-            android:textColor="@color/white" />
-
-        <ListView
-            android:id="@+id/peerListView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@android:color/darker_gray" />
-
     </LinearLayout>
 
     <LinearLayout
@@ -105,16 +82,16 @@
         android:orientation="horizontal">
 
         <Button
-            android:id="@+id/discover"
+            android:id="@+id/btnConnect"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginEnd="4dp"
             android:layout_weight="1"
-            android:text="Buscar" />
+            android:text="Conectar" />
 
 
         <Button
-            android:id="@+id/btnDesconectar"
+            android:id="@+id/btnDisconnect"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="4dp"
