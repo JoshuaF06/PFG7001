@@ -32,7 +32,6 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Arrays;
@@ -48,14 +47,13 @@ public class MainActivity extends AppCompatActivity implements ConnectFragment.I
     private float gain3 = 1;
     private float gain4 = 1;
     private BottomNavigationView bottomNavigation;
-    private static final String SERVER_IP = "192.168.4.1"; //server IP address
-    private PrintWriter mBufferOut;
+    private static final String SERVER_IP = "192.168.4.1";
     private AudioTrack audioTrack1;
     private AudioTrack audioTrack2;
     private AudioTrack audioTrack3;
     private AudioTrack audioTrack4;
     private WifiManager wifimgr;
-    private String deviceName = android.os.Build.MODEL;
+    private final String deviceName = android.os.Build.MODEL;
     private String wifiName;
 
     private static final int PERMISSIONS_REQUEST_CODE_ACCESS_FINE_LOCATION = 1001;
@@ -251,11 +249,9 @@ public class MainActivity extends AppCompatActivity implements ConnectFragment.I
         protected String doInBackground(String... strings) {
             port = strings[0];
             try {
-                String messageStr = "feed";
                 InetAddress serverAddr = InetAddress.getByName(SERVER_IP);
                 Socket client = new Socket(serverAddr, Integer.parseInt(port));
                 client.setTcpNoDelay(true);
-                Log.i("HOLA", "socket " + client);
                 switch (port) {
                     case "8888":
                         SocketHandler.setSocket1(client);
@@ -272,17 +268,15 @@ public class MainActivity extends AppCompatActivity implements ConnectFragment.I
                 }
                 return port;
             } catch (IOException e) {
-                Log.i("HOLA", "Error " + e);
                 e.printStackTrace();
+                return "";
             }
-            return "";
         }
 
         @Override
         protected void onPostExecute(String s) {
             super.onPostExecute(s);
             int selectPort;
-            Log.i("HOLA", "onPostExecute " + s);
 
             switch (s) {
                 case "8888":
