@@ -101,7 +101,7 @@ public class MainActivity extends AppCompatActivity implements ConnectFragment.I
         connectFragment = ConnectFragment.getInstance(deviceName, wifiName);
         streamFragment = StreamFragment.getInstance(false);
 
-       openFragment(connectFragment);
+        openFragment(connectFragment);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
                 && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
