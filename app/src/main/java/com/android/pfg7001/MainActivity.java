@@ -314,8 +314,10 @@ public class MainActivity extends AppCompatActivity implements ConnectFragment.I
             try {
                 Socket client;
                 int intBufferSize = AudioRecord.getMinBufferSize(16000,
-                        AudioFormat.CHANNEL_IN_MONO,
+                        AudioFormat.CHANNEL_IN_STEREO,
                         AudioFormat.ENCODING_PCM_16BIT);
+
+                Log.i("BUFFER_INT", "" + intBufferSize);
 
                 byte[] shortAudioData = new byte[intBufferSize];
 
@@ -324,7 +326,7 @@ public class MainActivity extends AppCompatActivity implements ConnectFragment.I
                         client = SocketHandler.getSocket1();
                         audioTrack1 = new AudioTrack(AudioManager.STREAM_MUSIC
                                 , 16000
-                                , AudioFormat.CHANNEL_IN_MONO
+                                , AudioFormat.CHANNEL_IN_STEREO
                                 , AudioFormat.ENCODING_PCM_16BIT
                                 , intBufferSize
                                 , AudioTrack.MODE_STREAM);
@@ -335,7 +337,7 @@ public class MainActivity extends AppCompatActivity implements ConnectFragment.I
                         client = SocketHandler.getSocket2();
                         audioTrack2 = new AudioTrack(AudioManager.STREAM_MUSIC
                                 , 16000
-                                , AudioFormat.CHANNEL_IN_MONO
+                                , AudioFormat.CHANNEL_IN_STEREO
                                 , AudioFormat.ENCODING_PCM_16BIT
                                 , intBufferSize
                                 , AudioTrack.MODE_STREAM);
@@ -346,7 +348,7 @@ public class MainActivity extends AppCompatActivity implements ConnectFragment.I
                         client = SocketHandler.getSocket3();
                         audioTrack3 = new AudioTrack(AudioManager.STREAM_MUSIC
                                 , 16000
-                                , AudioFormat.CHANNEL_IN_MONO
+                                , AudioFormat.CHANNEL_IN_STEREO
                                 , AudioFormat.ENCODING_PCM_16BIT
                                 , intBufferSize
                                 , AudioTrack.MODE_STREAM);
@@ -357,7 +359,7 @@ public class MainActivity extends AppCompatActivity implements ConnectFragment.I
                         client = SocketHandler.getSocket4();
                         audioTrack4 = new AudioTrack(AudioManager.STREAM_MUSIC
                                 , 16000
-                                , AudioFormat.CHANNEL_IN_MONO
+                                , AudioFormat.CHANNEL_IN_STEREO
                                 , AudioFormat.ENCODING_PCM_16BIT
                                 , intBufferSize
                                 , AudioTrack.MODE_STREAM);

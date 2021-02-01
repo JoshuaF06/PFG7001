@@ -14,7 +14,6 @@
     <color name="grayPrimary">#9e9e9e</color>
     <color name="grayPrimaryDark">#707070</color>
 
-    <color name="colorPrimary">#CDDC39</color>
     <color name="colorBlackSemitransparent">#E6000000</color>
     <color name="colorWhiteSemitransparent">#B3FFFFFF</color>
 </resources>

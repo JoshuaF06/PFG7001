@@ -5,9 +5,4 @@
     <string name="music">Pistas</string>
     <string name="settings">Configuración</string>
 
-    <string-array name="tab_text">
-        <item>@string/conection</item>
-        <item>@string/music</item>
-        <item>@string/settings</item>
-    </string-array>
 </resources>
