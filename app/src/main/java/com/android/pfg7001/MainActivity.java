@@ -36,7 +36,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Arrays;
 
-public class MainActivity extends AppCompatActivity implements ConnectFragment.IFindPeersFragment, ConnectionDialog.IConnectionDialog,
+public class MainActivity extends AppCompatActivity implements ConnectFragment.IConnectFragment, ConnectionDialog.IConnectionDialog,
         StreamFragment.IStreamFragment {
 
     ConnectFragment connectFragment;

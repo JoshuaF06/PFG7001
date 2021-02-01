@@ -20,7 +20,7 @@ public class ConnectFragment extends Fragment {
 
     private Button btnDisconnect;
     private Button btnConnect;
-    private IFindPeersFragment myInterface;
+    private IConnectFragment myInterface;
     private TextView mTextviewDeviceName;
     private TextView mTextviewDeviceState;
     private String mDeviceName;
@@ -41,7 +41,7 @@ public class ConnectFragment extends Fragment {
         return fragment;
     }
 
-    public interface IFindPeersFragment {
+    public interface IConnectFragment {
         void connect();
 
         void disconnect();
@@ -51,8 +51,8 @@ public class ConnectFragment extends Fragment {
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
 
-        if (context instanceof IFindPeersFragment) {
-            this.myInterface = (IFindPeersFragment) context;
+        if (context instanceof IConnectFragment) {
+            this.myInterface = (IConnectFragment) context;
         }
     }
 
